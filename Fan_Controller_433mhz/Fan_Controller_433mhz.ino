@@ -3,6 +3,17 @@
 #include <PubSubClient.h>
 #include <map>
 
+//defining the variables to use in code. Update here only
+const char* netSsid = "ssid"; //Your Network SSID
+const char* netPassword = "password"; //Your Network Password
+const char* mqttServer= "homeassistant.local"; //Your MQTT Server address
+const char* mqttport = "1883"; //The MQTT port
+const char* mqttUser = "user";
+const char* mqttPass = "password";
+const char* gpioPort = "15";
+const char* switchVersion = "1";
+const char* switchPulse = "281";
+
 const char* mqttTopic = "bedroom-fan";
 std::map<String, unsigned long> messageCodes = {
   {"light-on", 2888128608},
@@ -32,7 +43,7 @@ void setup() {
   Serial.begin(115200);
 
   setupRcSwitch(15, 1, 295);
-  setupWifi("ssid", "password"); //replace ssid and password with your login details
+  setupWifi(netSsid, netPassword);
 
   client.setServer("homeassistant.local", 1883); //MQTT server address and port
   client.setCallback(callback);
