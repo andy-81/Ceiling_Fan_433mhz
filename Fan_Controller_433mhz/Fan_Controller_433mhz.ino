@@ -7,12 +7,13 @@
 const char* netSsid = "ssid"; //Your Network SSID
 const char* netPassword = "password"; //Your Network Password
 const char* mqttServer= "homeassistant.local"; //Your MQTT Server address
-const char* mqttport = "1883"; //The MQTT port
-const char* mqttUser = "user";
-const char* mqttPass = "password";
-const char* gpioPort = "15";
-const char* switchVersion = "1";
-const char* switchPulse = "281";
+int mqttPort = 1883; //The MQTT port
+const char* mqttUser = "user"; //MQTT Username
+const char* mqttPass = "password"; //MQTT Password
+int transmitPort = 15; //GPIO port the Transmitter is plugged into
+int switchVersion = 1; //Version as determined by received data
+int switchPulse = 281; //Pulse length as determined by the received data
+int receivePort = 13; //Reciever GPIO Port
 
 const char* mqttTopic = "bedroom-fan";
 std::map<String, unsigned long> messageCodes = {
@@ -42,11 +43,13 @@ RCSwitch mySwitch = RCSwitch();
 void setup() {
   Serial.begin(115200);
 
-  setupRcSwitch(15, 1, 295);
+  setupRcSwitch(transmitPort, switchVersion, switchPulse);
   setupWifi(netSsid, netPassword);
 
-  client.setServer("homeassistant.local", 1883); //MQTT server address and port
+  client.setServer(mqttServer, mqttPort); //MQTT server address and port
   client.setCallback(callback);
+
+  mySwitch.enableReceive(digitalPinToInterrupt(receivePort));
 }
 
 void sendRadioCommand(const String& message) {
@@ -81,7 +84,7 @@ void setupWifi(const char* ssid, const char* password) {
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("ESP32Client", "username", "password")) { //I have added username and password down here but trying to work out if I can add it higher up
+    if (client.connect("ESP32Client", mqttUser, mqttPass)) { //I have added username and password down here but trying to work out if I can add it higher up
       Serial.println("connected");
       client.subscribe(mqttTopic);
     } else {
@@ -106,11 +109,22 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   sendRadioCommand(message);
 }
-
+void loop() {
+  
+}
 void loop() {
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
   delay(2); // allow the CPU to switch to other tasks
+  
+  if (mySwitch.available()) {
+    client.publish("remotereceived/receivedSignal", String(mySwitch.getReceivedValue()).c_str());
+    client.publish("remotereceived/receivedbit", String(mySwitch.getReceivedBitlength()).c_str());
+    client.publish("remotereceived/receivedProto", String(mySwitch.getReceivedProtocol()).c_str());
+    client.publish("remotereceived/receivedLength", String(mySwitch.getReceivedDelay()).c_str());
+
+    mySwitch.resetAvailable();
+  }
 }
