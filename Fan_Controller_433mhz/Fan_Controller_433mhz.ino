@@ -109,9 +109,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   sendRadioCommand(message);
 }
-void loop() {
-  
-}
+
 void loop() {
   if (!client.connected()) {
     reconnect();
