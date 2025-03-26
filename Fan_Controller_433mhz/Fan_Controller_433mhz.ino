@@ -115,7 +115,7 @@ void loop() {
     reconnect();
   }
   client.loop();
-  delay(2); // allow the CPU to switch to other tasks
+  yield(); // allow the CPU to switch to other tasks
   
   if (mySwitch.available()) {
     client.publish("remotereceived/receivedSignal", String(mySwitch.getReceivedValue()).c_str());
