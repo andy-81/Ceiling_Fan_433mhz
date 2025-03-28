@@ -115,14 +115,30 @@ void loop() {
     reconnect();
   }
   client.loop();
-  yield(); // allow the CPU to switch to other tasks
-  
-  if (mySwitch.available()) {
-    client.publish("remotereceived/receivedSignal", String(mySwitch.getReceivedValue()).c_str());
-    client.publish("remotereceived/receivedbit", String(mySwitch.getReceivedBitlength()).c_str());
-    client.publish("remotereceived/receivedProto", String(mySwitch.getReceivedProtocol()).c_str());
-    client.publish("remotereceived/receivedLength", String(mySwitch.getReceivedDelay()).c_str());
 
+  if (mySwitch.available()) {
+    unsigned long receivedCode = mySwitch.getReceivedValue();
+    if (receivedCode == 0) {
+      Serial.println("Unknown encoding");
+    } else {
+      Serial.print("Received ");
+      Serial.println(receivedCode);
+      client.publish("remotereceived/receivedSignal", String(receivedCode).c_str());
+      client.publish("remotereceived/receivedbit", String(mySwitch.getReceivedBitlength()).c_str());
+      client.publish("remotereceived/receivedProto", String(mySwitch.getReceivedProtocol()).c_str());
+      client.publish("remotereceived/receivedLength", String(mySwitch.getReceivedDelay()).c_str());
+    }
     mySwitch.resetAvailable();
   }
+
+static unsigned long lastCheck = millis();
+if (millis() - lastCheck > 10000) {
+  Serial.println("Receiver still active...");
+  lastCheck = millis();
+
+  yield();
+  //delay(10); // Small delay helps multitasking
+}
+
+
 }
